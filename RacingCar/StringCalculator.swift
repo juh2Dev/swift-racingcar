@@ -20,7 +20,22 @@ enum Operator: String {
 enum  StringCalculatorError: Error {
     case invalidOperator   // 잘못된 연산자
     case invalidInputString // 잘못된 입력값
-    case DividedValueIsNotInteger // 나눗셈 결과값이 정수가 아님
+    case dividedValueIsNotInteger // 나눗셈 결과값이 정수가 아님
+}
+extension StringCalculatorError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+            
+        case .invalidOperator:
+            return NSLocalizedString("잘못된 연산자입니다.", comment: "Invalid Operator")
+            
+        case .invalidInputString:
+            return NSLocalizedString("잘못된 입력 값 입니다.", comment: "Invalid Input String")
+            
+        case .dividedValueIsNotInteger:
+            return NSLocalizedString("정수로 나누어지지 않는 값입니다.", comment: "Divided Value Is Not Integer")
+        }
+    }
 }
 
 
@@ -32,7 +47,7 @@ class StringCalculator {
     func calculate(string inputString: String) throws -> Int{
         
         //공백으로 문자열 나누기
-        let splitedStrings: [String] = split(string: inputString)
+        let splitedStrings: [String] = splitBySpace(string: inputString)
        
        
         var index: Int = 1
@@ -42,7 +57,7 @@ class StringCalculator {
         repeat {
             let lhs: Int = result
             let rhs: Int = try splitedStrings[index + 1].toInt()
-            let calculateTwoInt: CalculateTwoInt = try getOperator(operator: splitedStrings[index])
+            let calculateTwoInt: CalculateTwoInt = try toOperator(from: splitedStrings[index])
             
             result = try calculateTwoInt(lhs, rhs)
             index = index + 2
@@ -53,23 +68,26 @@ class StringCalculator {
     }
     
     
-    // 문자열 나누기
-    //Q. 공백으로 나누는거니까 splitBySpace(string:) 이 더 괜찮을까요?
-    private func split(string inputString: String) -> [String] {
+    // 공백으로 문자열 나누기
+    private func splitBySpace(string inputString: String) -> [String] {
         return inputString.components(separatedBy: " ")
     }
     
-    // 연산자에 맞는 함수를 리턴
-    private func getOperator(operator rawValue: String) throws -> CalculateTwoInt {
-        
-        switch Operator(rawValue: rawValue) {
+    
+    /// 연산자에 맞는 함수를 리턴
+    /// - Parameter rawValue: String 형식의 연산자 (ex:  "+" ,  "-",    "/",    "*")
+    /// - Returns: 해당 연산 작업을 수행하는 메소드 반환
+    private func toOperator(from rawValue: String) throws -> CalculateTwoInt {
+
+        guard let convertedOperator: Operator = Operator(rawValue: rawValue) else {
+            throw StringCalculatorError.invalidOperator
+        }
+
+        switch convertedOperator {
         case .add: return add
         case .subtract: return subtract
         case .multiply: return multiply
         case .divide: return divide
-            
-        default:
-            throw StringCalculatorError.DividedValueIsNotInteger
         }
     }
 }
@@ -99,7 +117,7 @@ extension StringCalculator {
         if ((lhs % rhs) == 0){
             return lhs / rhs
         }
-        throw StringCalculatorError.DividedValueIsNotInteger
+        throw StringCalculatorError.dividedValueIsNotInteger
     }
     
 }
